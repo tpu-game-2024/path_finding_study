@@ -26,6 +26,8 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 
 	// 経路探索
 	Point 現在 = 始点;
+	int steps = 0;
+	Point 停止 = 終点;// とりあえずあり得ない場所で初期化
 	while (現在 != 終点) {
 		// 歩いた場所に印をつける(見やすさのために始点は書き換えない)
 		if (現在 != 始点){mass[現在.y][現在.x].set(Mass::WAYPOINT);}
@@ -48,11 +50,17 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 		}
 
 		// 動けなかった場合
-		int r = engine() % 4;// 4方向の乱数
-		Point 次 = 現在;
-		次.x += (r == 0) - (r == 1);
-		次.y += (r == 2) - (r == 3);
-		if (map_[次.y][次.x].canMove()) { 現在 = 次; continue; }
+		if (停止 != 現在) {
+			停止 = 現在;
+			steps = 1;
+		} else {steps++;}
+		for (int i = 0; i < steps; i++) {
+			int r = engine() % 4;// 4方向の乱数
+			Point 次 = 現在;
+			次.x += (r == 0) - (r == 1);
+			次.y += (r == 2) - (r == 3);
+			if (map_[次.y][次.x].canMove()) { 現在 = 次; mass[現在.y][現在.x].set(Mass::WAYPOINT); }
+		}
 	}
 
 	return true;

@@ -36,7 +36,7 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 			Point 次 = 現在 + 移動;
 			Mass &次のマス = mass[次.y][次.x];
 			if (map_[次.y][次.x].canMove() && !次のマス.isClosed()) {
-				int 始点からの歩数 = distance + 1;
+				float 始点からの歩数 = static_cast<float>(distance) + 次のマス.getCost();
 				int 以前の歩数 = 次のマス.getSteps();
 				if (0 <= 以前の歩数) {// 既に訪れた
 					if (以前の歩数 <= 始点からの歩数) continue;// 以前の方が距離が少ない
@@ -46,7 +46,7 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 					}
 				}
 				次のマス.visit(現在, 次のマス);
-				q.insert({ static_cast<float>(始点からの歩数) + Point::distance(次, 終点), 次 });
+				q.insert({ 始点からの歩数 + Point::distance(次, 終点), 次 });
 
 				if (次 == 終点)
 				{

@@ -1,4 +1,5 @@
 ﻿#include "board.h"
+#include <random>
 
 std::map<Mass::status, MassInfo> Mass::statusData =
 {
@@ -20,6 +21,8 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 {
 	mass[始点.y][始点.x].set(Mass::START);
 	mass[終点.y][終点.x].set(Mass::GOAL);
+
+	std::mt19937 engine;
 
 	// 経路探索
 	Point 現在 = 始点;
@@ -43,6 +46,13 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 			if (map_[左右.y][左右.x].canMove()) { 現在 = 左右; continue; }
 			if (map_[上下.y][上下.x].canMove()) { 現在 = 上下; continue; }
 		}
+
+		// 動けなかった場合
+		int r = engine() % 4;// 4方向の乱数
+		Point 次 = 現在;
+		次.x += (r == 0) - (r == 1);
+		次.y += (r == 2) - (r == 3);
+		if (map_[次.y][次.x].canMove()) { 現在 = 次; continue; }
 	}
 
 	return true;

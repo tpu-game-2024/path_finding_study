@@ -31,11 +31,15 @@ struct MassInfo {
 
 class Mass {
 private:
-	bool is_visited_ = false;
+	bool is_cloased_ = false;
+	int steps_ = -1;
 	Point parent_;
 public:
-	void visit(const Point& parent) { is_visited_ = true; parent_ = parent; }
-	bool isVisited() const { return is_visited_; }
+	void visit(const Point& parent, Mass &parentMass) {
+		parent_ = parent; steps_ = parentMass.getSteps() + 1; }
+	void close() { is_cloased_ = true; }
+	bool isClosed() const { return is_cloased_; }
+	int getSteps() { return steps_; }
 	Point& getParent() { return parent_; }
 
 public:

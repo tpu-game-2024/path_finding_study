@@ -30,9 +30,25 @@ struct MassInfo {
 };
 
 class Mass {
+private:
+	//bool 既訪 = false;//既に訪れているのか
+	bool 追加フラグ = false;
+	int 段階 = -1;
+	Point 来訪;//どこから訪れたのか
 public:
-	enum status {
-		// 環境
+	//void 訪問(const Point& parent) { 既訪 = true; 来訪 = parent; }
+	//bool 取得_既訪() const { return 既訪; }
+	void 訪問(const Point& parent, Mass &来訪Mass)
+	{
+		来訪 = parent; 
+		段階 = 来訪Mass.取得_段階() + 1;
+	}
+	void 閉じる() {追加フラグ = true;}
+	bool 取得_追加フラグ() const {return 追加フラグ;};
+	int 取得_段階() {return 段階;};
+	Point& 取得_来訪() { return 来訪; }
+	enum status 
+	{// 環境
 		BLANK,		// 空間
 		WALL,		// 壁通れない
 		WATER,		// 進むのが1/3に遅くなる
@@ -49,16 +65,29 @@ private:
 	static std::map<status, MassInfo> statusData;
 	status s_ = BLANK;
 
+
+
 public:
 	void set(status s) { s_ = s; }
-	void set(char c) {// cの文字を持つstatusを検索して設定する（重い）
+
+	void set(char c) 
+	{// cの文字を持つstatusを検索して設定する（重い）
+
 		s_ = INVALID;// 見つからなった際の値
-		for (auto& x : statusData) { if (x.second.chr == c) { s_ = x.first; return; } }
+
+		for (auto& x : statusData) 
+		{ 
+			if (x.second.chr == c) 
+			{
+				s_ = x.first; return; 
+			} 
+		}
 	}
 
 	const std::string getText() const { return std::string{ statusData[s_].chr}; }
 
 	bool canMove() const { return 0 <= statusData[s_].cost; }
+
 	float getCost() const { return statusData[s_].cost; }
 };
 
@@ -77,7 +106,9 @@ private:
 			map_[y].resize(横);
 
 			assert(map_data[y].size() == 横);// 整合性チェック
-			for(int x = 0; x < 横; x++) {
+
+			for(int x = 0; x < 横; x++) 
+			{
 				map_[y][x].set(map_data[y][x]);
 			}
 		}
@@ -112,18 +143,21 @@ public:
 
 		std::cout << std::endl;// 上を空ける
 
-		for (unsigned int y = 0; y < 縦; y++) {
+		for (unsigned int y = 0; y < 縦; y++)
+		{
 			std::cout << " ";// 左を空ける
 
 			// 各マスの表示
-			for (unsigned int x = 0; x < 横; x++) {
+			for (unsigned int x = 0; x < 横; x++)
+			{
 				std::cout << mass[y][x].getText();
 			}
+
 			std::cout << std::endl;
 		}
+
 		std::cout << std::endl;// 下を空ける
 	}
-
 	// 経路探索！
 	bool find(const Point& start, const Point& goal, std::vector<std::vector<Mass>>& mass) const;
 };

@@ -3,10 +3,15 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <list>
+#include <queue>
+#include <unordered_map>
 
 struct Point {
 	int x = -1;
 	int y = -1;
+
+	static Point init() { return { -1, -1 }; }
 
 	bool operator == (const Point& rhs) const {
 		return x == rhs.x && y == rhs.y;
@@ -23,6 +28,13 @@ struct Point {
 		return sqrtf(float(dx * dx + dy * dy));
 	}
 };
+
+struct PointHash {
+	std::size_t operator()(const Point& p) const noexcept {
+		return std::hash<int>()(p.x) ^ (std::hash<int>()(p.y) << 1);
+	}
+};
+
 
 struct MassInfo {
 	float cost;	// そのマスに行くためのコスト(負ならいけない)
@@ -49,8 +61,11 @@ private:
 	static std::map<status, MassInfo> statusData;
 	status s_ = BLANK;
 
+	Point parent_ = Point::init();
+
 public:
 	void set(status s) { s_ = s; }
+	void setParent(Point parent) { parent_ = parent; }
 	void set(char c) {// cの文字を持つstatusを検索して設定する（重い）
 		s_ = INVALID;// 見つからなった際の値
 		for (auto& x : statusData) { if (x.second.chr == c) { s_ = x.first; return; } }
@@ -58,13 +73,37 @@ public:
 
 	const std::string getText() const { return std::string{ statusData[s_].chr}; }
 
-	bool canMove() const { return 0 <= statusData[s_].cost; }
+	bool canMove() const { return 0 <= statusData[s_].cost && parent_== Point::init(); }
 	float getCost() const { return statusData[s_].cost; }
+
+	Point getParent() const { return parent_; }
+};
+
+struct Node {
+	Node() {
+		position = Point::init();
+		gCost = 0;
+		fCost = 0;
+	}
+	Node(const Point pos, const float g, const float f) {
+		position = pos;
+		gCost = g;
+		fCost = f;
+	}
+
+	Point position;
+	float gCost;
+	float fCost;
+	bool operator>(const Node& other) const {
+		return fCost > other.fCost;
+	}
 };
 
 class Board {
 private:
 	std::vector<std::vector<Mass>> map_;
+
+	const std::list<Point> dirs = { {1, 0}, {0, 1}, {-1, 0}, {0, -1} };
 
 	void initialize(const std::vector<std::string> &map_data)
 	{
@@ -80,6 +119,19 @@ private:
 			for(int x = 0; x < 横; x++) {
 				map_[y][x].set(map_data[y][x]);
 			}
+		}
+	}
+
+	// ヒューリスティック
+	static float heuristic(const Point& a, const Point& b) {
+		return static_cast<float>(std::abs(a.x - b.x) + std::abs(a.y - b.y));
+	}
+
+	// ルートの設定
+	static void apply_root(Point current, std::vector<std::vector<Mass>>& mass) {
+		while (current != Point::init() && mass[current.y][current.x].getParent() != current) {
+			mass[current.y][current.x].set(Mass::WAYPOINT);
+			current = mass[current.y][current.x].getParent();
 		}
 	}
 

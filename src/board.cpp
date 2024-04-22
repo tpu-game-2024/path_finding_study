@@ -15,24 +15,43 @@ std::map<Mass::status, MassInfo> Mass::statusData =
 	{ INVALID,  {-1.0f, '\0'}},
 };
 
-
+// A* implementation
 bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vector<Mass>> &mass) const
 {
-	mass[始点.y][始点.x].set(Mass::START);
-	mass[終点.y][終点.x].set(Mass::GOAL);
+	std::priority_queue<Node, std::vector<Node>, std::greater<>> openList;
+	std::unordered_map<Point, Node, PointHash> allNodes;
 
-	// 経路探索
-	Point 現在 = 始点;
-	while (現在 != 終点) {
-		// 歩いた場所に印をつける(見やすさのために始点は書き換えない)
-		if (現在 != 始点){mass[現在.y][現在.x].set(Mass::WAYPOINT);}
+	Node startNode = {始点, 0, heuristic(始点, 終点)};
+	openList.push(startNode);
+	allNodes[始点] = startNode;
 
-		// 終点に向かって歩く
-		if (現在.x < 終点.x) { 現在.x++; continue; }
-		if (終点.x < 現在.x) { 現在.x--; continue; }
-		if (現在.y < 終点.y) { 現在.y++; continue; }
-		if (終点.y < 現在.y) { 現在.y--; continue; }
+	while (!openList.empty()) {
+		Node current = openList.top();
+		openList.pop();
+
+		if (current.position == 終点) {
+			apply_root(current.position, mass);
+			// 上書きされるStart&Goalを再設定
+			mass[始点.y][始点.x].set(Mass::START);
+			mass[終点.y][終点.x].set(Mass::GOAL);
+			return true;
+		}
+
+		for (Point dir : dirs) {
+			Point pos = current.position + dir;
+			if (!mass[pos.y][pos.x].canMove()) continue;
+
+			float gCost = current.gCost + mass[pos.y][pos.x].getCost();
+			Node currentNode = {pos, gCost, 0};
+			currentNode.fCost = gCost + heuristic(pos, 終点);
+
+			if (allNodes.find(pos) == allNodes.end() || gCost < allNodes[pos].gCost) {
+				openList.push(currentNode);
+				allNodes[pos] = currentNode;
+				mass[pos.y][pos.x].setParent(current.position);
+			}
+		}
 	}
 
-	return true;
+	return false;
 }

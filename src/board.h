@@ -4,17 +4,20 @@
 #include <vector>
 #include <map>
 
-struct Point {
+struct Point 
+{
 	int x = -1;
 	int y = -1;
 
-	bool operator == (const Point& rhs) const {
-		return x == rhs.x && y == rhs.y;
-	}
-	// != は == の否定で定義
-	bool operator != (const Point& rhs) const {return !(*this == rhs);}
+	bool operator == (const Point& rhs)
+		const {return x == rhs.x && y == rhs.y;}
 
-	Point operator+(const Point& rhs) const { return { x + rhs.x, y + rhs.y }; }
+	// != は == の否定で定義
+	bool operator != (const Point& rhs) 
+		const {return !(*this == rhs);}
+
+	Point operator+(const Point& rhs) 
+		const { return { x + rhs.x, y + rhs.y }; }
 
 	static float distance(const Point& p0, const Point& p1)
 	{
@@ -24,29 +27,31 @@ struct Point {
 	}
 };
 
-struct MassInfo {
+struct MassData 
+{
 	float cost;	// そのマスに行くためのコスト(負ならいけない)
 	char chr;	// 表示用の文字
 };
 
-class Mass {
+class MassInfo 
+{
 private:
 	//bool 既訪 = false;//既に訪れているのか
-	bool 追加フラグ = false;
-	int 段階 = -1;
-	Point 来訪;//どこから訪れたのか
+	bool closedListAddFlag = false;
+	int checkStep = -1;
+	Point visitedPoint;//どこから訪れたのか
 public:
 	//void 訪問(const Point& parent) { 既訪 = true; 来訪 = parent; }
 	//bool 取得_既訪() const { return 既訪; }
-	void 訪問(const Point& parent, Mass &来訪Mass)
+	void visit(const Point& parent, MassInfo & visitedMass)
 	{
-		来訪 = parent; 
-		段階 = 来訪Mass.取得_段階() + 1;
+		visitedPoint = parent;
+		checkStep = visitedMass.get_checkStep() + 1;
 	}
-	void 閉じる() {追加フラグ = true;}
-	bool 取得_追加フラグ() const {return 追加フラグ;};
-	int 取得_段階() {return 段階;};
-	Point& 取得_来訪() { return 来訪; }
+	void set_AddFlag() { closedListAddFlag = true;}
+	bool get_closedListAddFlag() const {return closedListAddFlag;};
+	int get_checkStep() {return checkStep;};
+	Point& get_visitedPoint() { return visitedPoint; }
 	enum status 
 	{// 環境
 		BLANK,		// 空間
@@ -62,7 +67,7 @@ public:
 		INVALID,	// 無効な値
 	};
 private:
-	static std::map<status, MassInfo> statusData;
+	static std::map<status, MassData> statusData;
 	status s_ = BLANK;
 
 
@@ -93,7 +98,7 @@ public:
 
 class Board {
 private:
-	std::vector<std::vector<Mass>> map_;
+	std::vector<std::vector<MassInfo>> map_;
 
 	void initialize(const std::vector<std::string> &map_data)
 	{
@@ -119,9 +124,9 @@ public:
 	~Board() {}
 
 	// massの準備(サイズを設定して、map_をコピー)
-	std::vector<std::vector<Mass>> setup()
+	std::vector<std::vector<MassInfo>> setup()
 	{
-		std::vector<std::vector<Mass>> mass;
+		std::vector<std::vector<MassInfo>> mass;
 
 		size_t 縦 = map_.size();
 		size_t 横 = map_[0].size();
@@ -136,7 +141,7 @@ public:
 		return mass;
 	}
 
-	void show(const std::vector<std::vector<Mass>>& mass) const
+	void show(const std::vector<std::vector<MassInfo>>& mass) const
 	{
 		size_t 縦 = mass.size();
 		size_t 横 = mass[0].size();
@@ -159,5 +164,5 @@ public:
 		std::cout << std::endl;// 下を空ける
 	}
 	// 経路探索！
-	bool find(const Point& start, const Point& goal, std::vector<std::vector<Mass>>& mass) const;
+	bool find(const Point& start, const Point& goal, std::vector<std::vector<MassInfo>>& mass) const;
 };

@@ -1,7 +1,8 @@
 ﻿#include "board.h"
 #include <random>
 #include <queue>
-std::map<Mass::status, MassInfo> Mass::statusData =
+
+std::map<MassInfo::status, MassData> MassInfo::statusData =
 {
 	{ BLANK, { 1.0f, ' '}},
 	{ WALL,  {-1.0f, '#'}},
@@ -17,65 +18,73 @@ std::map<Mass::status, MassInfo> Mass::statusData =
 };
 
 
-bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vector<Mass>> &mass) const
+bool Board::find(const Point& StartPoint, const Point& GoalPoint, std::vector<std::vector<MassInfo>> &mass) const
 {
-	mass[始点.y][始点.x].set(Mass::START);
-	mass[終点.y][終点.x].set(Mass::GOAL);
+	mass[StartPoint.y][StartPoint.x].set(MassInfo::START);
+	mass[GoalPoint.y][GoalPoint.x].set(MassInfo::GOAL);
 
-	std::mt19937 ランダム;
+	std::mt19937 engine;
 
 	// 経路探索
 	std::multimap<float,Point> q;
-	mass[始点.y][始点.x].訪問(始点, mass[始点.y][始点.x]);
-	q.insert({ Point::distance(始点,終点),始点});
-	//開覧.push(始点);
-	//Point 現在 = 始点;
-	//int 段階 = 0;
-	//Point 停止 = 終点;//取り敢えずの初期化
+	mass[StartPoint.y][StartPoint.x].visit(StartPoint, mass[StartPoint.y][StartPoint.x]);
+
+	q.insert({ Point::distance(StartPoint,GoalPoint),StartPoint});
+	
 	while (!q.empty())
 	{
-		
-		Point 現在 = q.begin()->second;
+		Point nowPoint = q.begin()->second;
 
-		int 距離 = mass[現在.y][現在.x].取得_段階();
+		int distanse = mass[nowPoint.y][nowPoint.x].get_checkStep();
 
 		q.erase(q.begin());
-		mass[現在.y][現在.x].閉じる();
-		const static Point 移動量[] = {{-1,0},{+1,0},{0,-1},{0,+1}};
-		for (const auto& 移動 : 移動量) 
+		mass[nowPoint.y][nowPoint.x].set_AddFlag();
+		const static Point moveValue[] = {{-1,0},{+1,0},{0,-1},{0,+1}};
+		for (const auto& movePoint : moveValue) 
 		{
-			Point 次 = 現在 + 移動;
-			Mass& 次点 = mass[次.y][次.x];
-			if (map_[次.y][次.x].canMove() && !次点.取得_追加フラグ())
+			Point nextPoint = nowPoint + movePoint;
+			MassInfo& nextMassInfo = mass[nextPoint.y][nextPoint.x];
+
+			bool Check_CanMoveNext = (map_[nextPoint.y][nextPoint.x].canMove());
+			bool Check_ListFlagFalse = (!nextMassInfo.get_closedListAddFlag());
+
+			if (Check_CanMoveNext && Check_ListFlagFalse)
 			{
-				float 始点からの歩数距離 = static_cast<float>(距離) + 次点.getCost();
-				int 以前からの歩数距離 = 次点.取得_段階();
-				if (0 <= 以前からの歩数距離)
+				float start_To_distanse = static_cast<float>(distanse) + nextMassInfo.getCost();
+				int before_To_distanse = nextMassInfo.get_checkStep();
+
+				bool Check_AlreadyVisit = (0 <= before_To_distanse);
+
+				if (Check_AlreadyVisit)
 				{
-					if (以前からの歩数距離 <= 始点からの歩数距離)continue;
+					bool Check_SmallBefore = (before_To_distanse <= start_To_distanse);
+
+					if (Check_SmallBefore) continue;
+
 					//古いキーの削除(浮動小数点のため誤差を考え全探索)
-					//auto a = q.equal_range(以前からの歩数距離);
+
 					for (auto it = q.begin(); it != q.end(); ++it)
 					{
-						if (it->second == 次) { q.erase(it); break; }
+						if (it->second == nextPoint) { q.erase(it); break; }
 					}
 				}
 
-				次点.訪問(現在, 次点);
-				q.insert({static_cast<float>(始点からの歩数距離) + Point::distance(次,終点) ,次});
+				nextMassInfo.visit(nowPoint, nextMassInfo);
+				q.insert({static_cast<float>(start_To_distanse) + Point::distance(nextPoint,GoalPoint) ,nextPoint});
 
-				if (次 == 終点)
+				bool Check_GoalIn = (nextPoint == GoalPoint);
+
+				if (Check_GoalIn)
 				{//終点から遡りWAYPONTを設定
-					Point& 歩いた場所 = mass[終点.y][終点.x].取得_来訪();
-					while (歩いた場所 != 始点)
+					Point& movedPoint = mass[GoalPoint.y][GoalPoint.x].get_visitedPoint();
+					while (movedPoint != StartPoint)
 					{//歩いた場所に印をつける(見易さのため始点は換えない)
-						Mass& m = mass[歩いた場所.y][歩いた場所.x];
-						m.set(Mass::WAYPOINT);
-						歩いた場所 = mass[歩いた場所.y][歩いた場所.x].取得_来訪();
+						MassInfo& m = mass[movedPoint.y][movedPoint.x];
+						m.set(MassInfo::WAYPOINT);
+						movedPoint = mass[movedPoint.y][movedPoint.x].get_visitedPoint();
 					}
 					return true;
-				}
-				
+				}	
 			}
 		}
 

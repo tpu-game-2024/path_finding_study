@@ -20,10 +20,11 @@ int main()
 	Board board(map_data);
 
 	// 経路探索
-	Point 始点 = { 9, 9 };
-	Point 終点 = { 2, 2 };
-	std::vector<std::vector<Mass>> mass = board.setup();
-	board.find(始点, 終点, mass);
+	Point StartPoint = { 9, 9 };
+	Point GoalPoint = { 2, 2 };
+
+	std::vector<std::vector<MassInfo>> mass = board.setup();
+	board.find(StartPoint, GoalPoint, mass);
 
 	board.show(mass);// 経路の可視化
 

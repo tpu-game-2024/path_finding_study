@@ -1,4 +1,5 @@
 ﻿#include "board.h"
+#include <random>
 
 std::map<Mass::status, MassInfo> Mass::statusData =
 {
@@ -15,7 +16,7 @@ std::map<Mass::status, MassInfo> Mass::statusData =
 	{ INVALID,  {-1.0f, '\0'}},
 };
 
-
+std::mt19937 engine;
 bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vector<Mass>> &mass) const
 {
 	mass[始点.y][始点.x].set(Mass::START);
@@ -26,12 +27,29 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 	while (現在 != 終点) {
 		// 歩いた場所に印をつける(見やすさのために始点は書き換えない)
 		if (現在 != 始点){mass[現在.y][現在.x].set(Mass::WAYPOINT);}
-
+		
 		// 終点に向かって歩く
-		if (現在.x < 終点.x) { 現在.x++; continue; }
-		if (終点.x < 現在.x) { 現在.x--; continue; }
-		if (現在.y < 終点.y) { 現在.y++; continue; }
-		if (終点.y < 現在.y) { 現在.y--; continue; }
+		int dx = 終点.x - 現在.x;
+		int dy = 終点.y - 現在.y;
+		Point 左右 = 現在; 左右.x += (dx > 0) - (dx < 0);
+		Point 上下 = 現在; 上下.y += (dy > 0) - (dy < 0);
+		
+		if (dx * dx < dy * dy)
+		{
+			// Y軸方向に近づこうとしてだめならX軸方向に動く
+			if (map_[上下.y][上下.x].canMove()) { 現在 = 上下; continue;}
+			if (map_[左右.y][左右.x].canMove()) { 現在 = 左右; continue;}
+		}
+		else
+		{
+			//X軸方向に近づこうとしてだめならY軸方向に動く
+			if (map_[左右.y][左右.x].canMove()) { 現在 = 左右; continue;}
+			if (map_[上下.y][上下.x].canMove()) { 現在 = 上下; continue;}
+		}
+		//動けなくなった場合
+		//４方向の乱数
+		int r = engine() % 4; 
+
 	}
 
 	return true;

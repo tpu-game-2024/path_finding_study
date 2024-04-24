@@ -16,23 +16,50 @@ std::map<Mass::status, MassInfo> Mass::statusData =
 };
 
 
-bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vector<Mass>> &mass) const
+bool Board::find(const Point& start, const Point& goal, std::vector<std::vector<Mass>>& mass) const
 {
-	mass[始点.y][始点.x].set(Mass::START);
-	mass[終点.y][終点.x].set(Mass::GOAL);
+	mass[start.y][start.x].set(Mass::START);
+	mass[goal.y][goal.x].set(Mass::GOAL);
 
 	// 経路探索
-	Point 現在 = 始点;
-	while (現在 != 終点) {
-		// 歩いた場所に印をつける(見やすさのために始点は書き換えない)
-		if (現在 != 始点){mass[現在.y][現在.x].set(Mass::WAYPOINT);}
+	std::multimap<float, Point> q;
+	mass[start.y][start.x].visit(start, mass[start.y][start.x]);
+	q.insert({ Point::distance(start,goal),start });
+	while (!q.empty())
+	{
+		Point current = q.begin()->second;
+		int distance = mass[current.y][current.x].getSteps();
+		q.erase(q.begin());
+		mass[current.y][current.x].close();
 
-		// 終点に向かって歩く
-		if (現在.x < 終点.x) { 現在.x++; continue; }
-		if (終点.x < 現在.x) { 現在.x--; continue; }
-		if (現在.y < 終点.y) { 現在.y++; continue; }
-		if (終点.y < 現在.y) { 現在.y--; continue; }
+		const static Point moveAmount[] = { {-1,0},{+1,0},{0,-1},{0,+1} };
+		for (const auto& move : moveAmount)
+		{
+			Point next = current + move;
+			Mass& nextMass = mass[next.y][next.x];
+			if (!map_[next.y][next.x].canMove() || nextMass.isClosed()) continue;
+			float stepsFromStart = static_cast<float>(distance) + nextMass.getCost();
+			int previousSteps = nextMass.getSteps();
+			if (0 <= previousSteps)
+			{
+				if (previousSteps <= stepsFromStart)continue;
+				for (auto it = q.begin(); it != q.end(); ++it)
+				{
+					if (it->second == next) { q.erase(it); break; }
+				}
+			}
+			nextMass.visit(current, nextMass);
+			q.insert({ static_cast<float>(stepsFromStart) + Point::distance(next,goal),next });
+
+			if (next != goal)continue;
+			Point& walkingPosition = mass[goal.y][goal.x].getParent();
+			while (walkingPosition != start)
+			{
+				Mass& m = mass[walkingPosition.y][walkingPosition.x];
+				m.set(Mass::WAYPOINT);
+				walkingPosition = mass[walkingPosition.y][walkingPosition.x].getParent();
+			}
+			return true;
+		}
 	}
-
-	return true;
 }

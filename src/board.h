@@ -12,7 +12,7 @@ struct Point {
 		return x == rhs.x && y == rhs.y;
 	}
 	// != は == の否定で定義
-	bool operator != (const Point& rhs) const {return !(*this == rhs);}
+	bool operator != (const Point& rhs) const { return !(*this == rhs); }
 
 	Point operator+(const Point& rhs) const { return { x + rhs.x, y + rhs.y }; }
 
@@ -48,6 +48,9 @@ public:
 private:
 	static std::map<status, MassInfo> statusData;
 	status s_ = BLANK;
+	bool is_cloased_ = false;
+	int steps_ = -1;
+	Point parent_;
 
 public:
 	void set(status s) { s_ = s; }
@@ -56,35 +59,43 @@ public:
 		for (auto& x : statusData) { if (x.second.chr == c) { s_ = x.first; return; } }
 	}
 
-	const std::string getText() const { return std::string{ statusData[s_].chr}; }
+	const std::string getText() const { return std::string{ statusData[s_].chr }; }
 
 	bool canMove() const { return 0 <= statusData[s_].cost; }
 	float getCost() const { return statusData[s_].cost; }
+	void visit(const Point& parent, Mass& parentMass)
+	{
+		parent_ = parent; steps_ = parentMass.getSteps() + 1;
+	}
+	void close() { is_cloased_ = true; };
+	bool isClosed() const { return is_cloased_; }
+	int getSteps() { return steps_; }
+	Point& getParent() { return parent_; }
 };
 
 class Board {
 private:
 	std::vector<std::vector<Mass>> map_;
 
-	void initialize(const std::vector<std::string> &map_data)
+	void initialize(const std::vector<std::string>& map_data)
 	{
-		size_t 縦 = map_data.size();
-		size_t 横 = map_data[0].size();
+		size_t vertical = map_data.size();
+		size_t width = map_data[0].size();
 
-		map_.resize(縦);
-		for (unsigned int y = 0; y < 縦; y++)
+		map_.resize(vertical);
+		for (unsigned int y = 0; y < vertical; y++)
 		{
-			map_[y].resize(横);
+			map_[y].resize(width);
 
-			assert(map_data[y].size() == 横);// 整合性チェック
-			for(int x = 0; x < 横; x++) {
+			assert(map_data[y].size() == width);// 整合性チェック
+			for (int x = 0; x < width; x++) {
 				map_[y][x].set(map_data[y][x]);
 			}
 		}
 	}
 
 public:
-	Board(const std::vector<std::string>& map_data) {initialize(map_data);}
+	Board(const std::vector<std::string>& map_data) { initialize(map_data); }
 	~Board() {}
 
 	// massの準備(サイズを設定して、map_をコピー)
@@ -92,13 +103,13 @@ public:
 	{
 		std::vector<std::vector<Mass>> mass;
 
-		size_t 縦 = map_.size();
-		size_t 横 = map_[0].size();
+		size_t vertical = map_.size();
+		size_t width = map_[0].size();
 
-		mass.resize(縦);
-		for (unsigned int y = 0; y < 縦; y++)
+		mass.resize(vertical);
+		for (unsigned int y = 0; y < vertical; y++)
 		{
-			mass[y].resize(横);
+			mass[y].resize(width);
 			std::copy(map_[y].begin(), map_[y].end(), mass[y].begin());
 		}
 
@@ -107,16 +118,16 @@ public:
 
 	void show(const std::vector<std::vector<Mass>>& mass) const
 	{
-		size_t 縦 = mass.size();
-		size_t 横 = mass[0].size();
+		size_t vertical = mass.size();
+		size_t width = mass[0].size();
 
 		std::cout << std::endl;// 上を空ける
 
-		for (unsigned int y = 0; y < 縦; y++) {
+		for (unsigned int y = 0; y < vertical; y++) {
 			std::cout << " ";// 左を空ける
 
 			// 各マスの表示
-			for (unsigned int x = 0; x < 横; x++) {
+			for (unsigned int x = 0; x < width; x++) {
 				std::cout << mass[y][x].getText();
 			}
 			std::cout << std::endl;

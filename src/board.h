@@ -48,6 +48,9 @@ public:
 private:
 	static std::map<status, MassInfo> statusData;
 	status s_ = BLANK;
+	bool is_closed_ = false;
+	int steps_ = -1;
+	Point parent_;
 
 public:
 	void set(status s) { s_ = s; }
@@ -60,6 +63,11 @@ public:
 
 	bool canMove() const { return 0 <= statusData[s_].cost; }
 	float getCost() const { return statusData[s_].cost; }
+	void visit(const Point& parent, Mass& parentMass) { parent_ = parent; steps_ = parentMass.getSteps() + 1; }
+	void close() { is_closed_ = true; }
+	bool isClosed() const { return is_closed_; }
+	int getSteps() { return steps_; }
+	Point& getParent() { return parent_; }
 };
 
 class Board {

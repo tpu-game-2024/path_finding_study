@@ -1,5 +1,5 @@
 ﻿#include "board.h"
-
+// test
 std::map<Mass::status, MassInfo> Mass::statusData =
 {
 	{ BLANK, { 1.0f, ' '}},

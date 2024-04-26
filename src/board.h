@@ -46,10 +46,19 @@ public:
 		INVALID,	// 無効な値
 	};
 private:
+	bool is_visited_ = false;
+	Point parent_;
 	static std::map<status, MassInfo> statusData;
 	status s_ = BLANK;
 
 public:
+	void visit(const Point& parent) { is_visited_ = true; parent_ = parent; }
+	//すでに着いたのか
+	bool isVisited() const { return is_visited_; }
+	//どこから来たのかを返す
+	Point& getParent() { return parent_; }
+
+
 	void set(status s) { s_ = s; }
 	void set(char c) {// cの文字を持つstatusを検索して設定する（重い）
 		s_ = INVALID;// 見つからなった際の値

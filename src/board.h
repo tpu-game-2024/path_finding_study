@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
-
+//位置の構造体
 struct Point {
 	int x = -1;
 	int y = -1;
@@ -28,8 +28,19 @@ struct MassInfo {
 	float cost;	// そのマスに行くためのコスト(負ならいけない)
 	char chr;	// 表示用の文字
 };
-
+//それぞれの場所の情報
 class Mass {
+private:
+     bool is_cloased_ =false;
+	 int steps_= -1;
+	 Point parent_;
+public:
+    void visit(const Point& parent,Mass &parentMass)
+	{parent_ = parent;steps_ = parentMass.getSteps()+1;}
+	void close(){is_cloased_ = true;}
+	bool isClosed() const{return is_cloased_;}
+	int getSteps(){return steps_;}
+	Point& getParent(){return parent_;}
 public:
 	enum status {
 		// 環境
@@ -57,11 +68,12 @@ public:
 	}
 
 	const std::string getText() const { return std::string{ statusData[s_].chr}; }
-
+	private:
+	static std::map<status, MassInfo> statusData;
 	bool canMove() const { return 0 <= statusData[s_].cost; }
 	float getCost() const { return statusData[s_].cost; }
 };
-
+//盤の初期化
 class Board {
 private:
 	std::vector<std::vector<Mass>> map_;

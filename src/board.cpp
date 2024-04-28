@@ -1,5 +1,4 @@
 ﻿#include "board.h"
-#include <queue>
 
 std::map<Mass::status, MassInfo> Mass::statusData =
 {
@@ -23,12 +22,16 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 	mass[終点.y][終点.x].set(Mass::GOAL);	
 
 	// 経路探索
-	std::queue<Point> q;
-	q.push(始点);
+	std::multimap<int, Point> q;  //multimapで優先度付きキューを実装
+	mass[始点.y][始点.x].visit(始点, mass[始点.y][始点.x]);
+	q.insert({0, 始点});
+
 	while (!q.empty())
 	{
-		Point 現在 = q.front();
-		q.pop();
+		int distance = q.begin()->first;
+		Point 現在 = q.begin()->second;
+		q.erase(q.begin());
+		mass[現在.y][現在.x].close();
 
 		const static Point 移動量[] = { {-1, 0}, {+1, 0}, {0, -1}, {0, +1}};
 		for (const auto& 移動 : 移動量)
@@ -36,11 +39,30 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 			Point 次 = 現在 + 移動;
 			Mass& 次のマス = mass[次.y][次.x];
 
-			//次のマスに移動可能かつまだゴールに到達していない
-			if (map_[次.y][次.x].canMove() && !次のマス.isVisited())
+			//次のマスに移動可能かつ次のマスがオープンリストの中にある
+			if (map_[次.y][次.x].canMove() && !次のマス.isClosed())
 			{
-				次のマス.visit(現在);
-				q.push(次);
+				int 始点からの歩数 = distance + 1;
+				int 以前の歩数 = 次のマス.getSteps();
+
+				if (0 <= 以前の歩数)
+				{
+					if (以前の歩数 <= 始点からの歩数)
+						continue; //以前の方が距離が少ない
+
+					//古いキーの消去
+					auto a = q.equal_range(以前の歩数);
+					for (auto it = a.first; it != a.second; ++it)
+					{
+						if (it->second == 次)
+						{
+							q.erase(it); 
+							break;
+						}
+					}
+				}
+				次のマス.visit(現在, 次のマス);
+				q.insert({ 始点からの歩数, 次 });
 
 				if (次 == 終点)
 				{
@@ -50,7 +72,7 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 					while (歩いた場所 != 始点)
 					{
 						//歩いた場所に印をつける(見やすさの為に始点は書き換えない)
-						Mass& m = mass[歩いた場所.y][歩いた場所.x];						
+						Mass& m = mass[歩いた場所.y][歩いた場所.x];
 						m.set(Mass::WAYPOINT);
 						歩いた場所 = mass[歩いた場所.y][歩いた場所.x].getParent();
 					}

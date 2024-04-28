@@ -1,18 +1,21 @@
 ﻿#pragma once
 #include <cassert>
 #include <iostream>
+#include <queue>
 #include <vector>
 #include <map>
 
-struct Point {
+struct Point
+{
 	int x = -1;
 	int y = -1;
 
-	bool operator == (const Point& rhs) const {
+	bool operator == (const Point& rhs) const
+	{
 		return x == rhs.x && y == rhs.y;
 	}
 	// != は == の否定で定義
-	bool operator != (const Point& rhs) const {return !(*this == rhs);}
+	bool operator != (const Point& rhs) const { return !(*this == rhs); }
 
 	Point operator+(const Point& rhs) const { return { x + rhs.x, y + rhs.y }; }
 
@@ -24,14 +27,17 @@ struct Point {
 	}
 };
 
-struct MassInfo {
+struct MassInfo
+{
 	float cost;	// そのマスに行くためのコスト(負ならいけない)
 	char chr;	// 表示用の文字
 };
 
-class Mass {
+class Mass
+{
 public:
-	enum status {
+	enum status
+	{
 		// 環境
 		BLANK,		// 空間
 		WALL,		// 壁通れない
@@ -46,27 +52,42 @@ public:
 		INVALID,	// 無効な値
 	};
 private:
+	bool is_closed = false;
 	static std::map<status, MassInfo> statusData;
 	status s_ = BLANK;
+	int steps_ = -1;
+	Point parent_;
 
 public:
+	void visit(const Point& parent, Mass& parentMass)
+	{
+		parent_ = parent;
+		steps_ = parentMass.getSteps() + 1;
+	}
+	void close() { is_closed = true; }
 	void set(status s) { s_ = s; }
-	void set(char c) {// cの文字を持つstatusを検索して設定する（重い）
+	void set(char c)
+	{
+		// cの文字を持つstatusを検索して設定する（重い）
 		s_ = INVALID;// 見つからなった際の値
 		for (auto& x : statusData) { if (x.second.chr == c) { s_ = x.first; return; } }
 	}
 
-	const std::string getText() const { return std::string{ statusData[s_].chr}; }
+	const std::string getText() const { return std::string{ statusData[s_].chr }; }
 
 	bool canMove() const { return 0 <= statusData[s_].cost; }
 	float getCost() const { return statusData[s_].cost; }
+	int getSteps() { return steps_; }
+	bool isClosed() { return is_closed; }
+	Point& getParent() { return parent_; }
 };
 
-class Board {
+class Board
+{
 private:
 	std::vector<std::vector<Mass>> map_;
 
-	void initialize(const std::vector<std::string> &map_data)
+	void initialize(const std::vector<std::string>& map_data)
 	{
 		size_t 縦 = map_data.size();
 		size_t 横 = map_data[0].size();
@@ -77,14 +98,15 @@ private:
 			map_[y].resize(横);
 
 			assert(map_data[y].size() == 横);// 整合性チェック
-			for(int x = 0; x < 横; x++) {
+			for (int x = 0; x < 横; x++)
+			{
 				map_[y][x].set(map_data[y][x]);
 			}
 		}
 	}
 
 public:
-	Board(const std::vector<std::string>& map_data) {initialize(map_data);}
+	Board(const std::vector<std::string>& map_data) { initialize(map_data); }
 	~Board() {}
 
 	// massの準備(サイズを設定して、map_をコピー)
@@ -112,11 +134,13 @@ public:
 
 		std::cout << std::endl;// 上を空ける
 
-		for (unsigned int y = 0; y < 縦; y++) {
+		for (unsigned int y = 0; y < 縦; y++)
+		{
 			std::cout << " ";// 左を空ける
 
 			// 各マスの表示
-			for (unsigned int x = 0; x < 横; x++) {
+			for (unsigned int x = 0; x < 横; x++)
+			{
 				std::cout << mass[y][x].getText();
 			}
 			std::cout << std::endl;

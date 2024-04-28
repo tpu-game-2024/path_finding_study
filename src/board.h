@@ -30,6 +30,21 @@ struct MassInfo {
 };
 
 class Mass {
+private:
+	bool is_closed = false; //既に訪れたか
+	Point parent; //どこから来たか
+	int steps = -1;
+
+public:
+	void visit(const Point& _parent, Mass& parentMass)
+	{
+		steps = parentMass.getSteps() + 1; parent = _parent;
+	}
+	bool isClosed() const { return is_closed; }
+	Point& getParent() { return parent; }
+	void close() { is_closed = true; }
+	int getSteps() { return steps; }
+
 public:
 	enum status {
 		// 環境

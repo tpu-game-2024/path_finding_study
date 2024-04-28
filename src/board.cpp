@@ -22,13 +22,13 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 	mass[終点.y][終点.x].set(Mass::GOAL);	
 
 	// 経路探索
-	std::multimap<int, Point> q;  //multimapで優先度付きキューを実装
+	std::multimap<float, Point> q;  //multimapで優先度付きキューを実装
 	mass[始点.y][始点.x].visit(始点, mass[始点.y][始点.x]);
-	q.insert({0, 始点});
+	q.insert({Point::distance(始点, 終点), 始点});
 
 	while (!q.empty())
 	{
-		int distance = q.begin()->first;
+		int distance = mass[始点.y][始点.x].getSteps();
 		Point 現在 = q.begin()->second;
 		q.erase(q.begin());
 		mass[現在.y][現在.x].close();
@@ -39,20 +39,19 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 			Point 次 = 現在 + 移動;
 			Mass& 次のマス = mass[次.y][次.x];
 
-			//次のマスに移動可能かつ次のマスがオープンリストの中にある
+			//次のマスに移動可能かつ次のマスが閉じていない
 			if (map_[次.y][次.x].canMove() && !次のマス.isClosed())
 			{
-				int 始点からの歩数 = distance + 1;
+				int 始点からの歩数 = static_cast<float>(distance) + 次のマス.getCost();
 				int 以前の歩数 = 次のマス.getSteps();
 
-				if (0 <= 以前の歩数)
+				if (0 <= 以前の歩数) //すでに訪れた
 				{
 					if (以前の歩数 <= 始点からの歩数)
 						continue; //以前の方が距離が少ない
 
-					//古いキーの消去
-					auto a = q.equal_range(以前の歩数);
-					for (auto it = a.first; it != a.second; ++it)
+					//古いキーの消去(浮動小数点のキーなので誤差を考慮して全探索)					
+					for (auto it = q.begin(); it != q.end(); ++it)
 					{
 						if (it->second == 次)
 						{
@@ -62,7 +61,7 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 					}
 				}
 				次のマス.visit(現在, 次のマス);
-				q.insert({ 始点からの歩数, 次 });
+				q.insert({ static_cast<float>(始点からの歩数) + Point::distance(次, 終点), 次});
 
 				if (次 == 終点)
 				{
@@ -80,8 +79,5 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 				}
 			}
 		}
-
 	}
-
-
 }

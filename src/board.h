@@ -46,22 +46,32 @@ public:
 		INVALID,	// 無効な値
 	};
 private:
+	bool is_closed_ = false;
+	int steps_ = -1;
+	Point parent_;
 	static std::map<status, MassInfo> statusData;
 	status s_ = BLANK;
-
 public:
+	void visit(const Point& parent,Mass &parentMass) {
+		parent_ = parent; steps_ = parentMass.getSteps() + 1;
+	}
+	void close() { is_closed_ = true; }
+	bool isClosed() const { return is_closed_; }
+	int getSteps() { return steps_; }
+	//bool isVisited()const { return is_visited_; }
+	Point& getParent() { return parent_; }
 	void set(status s) { s_ = s; }
 	void set(char c) {// cの文字を持つstatusを検索して設定する（重い）
 		s_ = INVALID;// 見つからなった際の値
 		for (auto& x : statusData) { if (x.second.chr == c) { s_ = x.first; return; } }
 	}
 
+
 	const std::string getText() const { return std::string{ statusData[s_].chr}; }
 
 	bool canMove() const { return 0 <= statusData[s_].cost; }
 	float getCost() const { return statusData[s_].cost; }
 };
-
 class Board {
 private:
 	std::vector<std::vector<Mass>> map_;
